@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 96%;
+
+    --card: 222 47% 9%;
+    --card-foreground: 210 40% 96%;
+
+    --popover: 222 47% 9%;
+    --popover-foreground: 210 40% 96%;
+
+    --primary: 0 84% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 222 30% 14%;
+    --secondary-foreground: 210 40% 96%;
+
+    --muted: 222 30% 14%;
+    --muted-foreground: 215 20% 55%;
+
+    --accent: 142 72% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 222 30% 18%;
+    --input: 222 30% 18%;
+    --ring: 0 84% 55%;
+
+    --radius: 0.75rem;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 210 100% 52%;
+    --info-foreground: 0 0% 100%;
+    --success: 142 72% 45%;
+    --success-foreground: 0 0% 100%;
+    --helper: 142 72% 45%;
+    --sos: 0 84% 55%;
+    --sos-glow: 0 84% 55%;
+    --pending: 38 92% 50%;
+    --accepted: 210 100% 52%;
+    --on-way: 38 70% 55%;
+    --completed: 142 72% 45%;
+    --escalated: 0 84% 55%;
+
+    --sidebar-background: 222 47% 5%;
+    --sidebar-foreground: 210 40% 80%;
+    --sidebar-primary: 0 84% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 30% 12%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 222 30% 15%;
+    --sidebar-ring: 0 84% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+}
+
+@layer utilities {
+  .glow-sos {
+    box-shadow: 0 0 30px hsl(var(--sos) / 0.4), 0 0 60px hsl(var(--sos) / 0.2);
+  }
+  .glow-helper {
+    box-shadow: 0 0 20px hsl(var(--helper) / 0.3);
+  }
+  .pulse-sos {
+    animation: pulseSOS 2s ease-in-out infinite;
+  }
+  .gradient-emergency {
+    background: linear-gradient(135deg, hsl(var(--sos)) 0%, hsl(0 84% 40%) 100%);
+  }
+  .gradient-safe {
+    background: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(160 72% 35%) 100%);
+  }
+  .gradient-dark {
+    background: linear-gradient(180deg, hsl(222 47% 8%) 0%, hsl(222 47% 4%) 100%);
+  }
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+}
+
+@keyframes pulseSOS {
+  0%, 100% { box-shadow: 0 0 20px hsl(var(--sos) / 0.3); transform: scale(1); }
+  50% { box-shadow: 0 0 40px hsl(var(--sos) / 0.6), 0 0 80px hsl(var(--sos) / 0.3); transform: scale(1.02); }
+}
+
+/* Leaflet overrides for dark theme */
+.leaflet-container {
+  background: hsl(222 47% 6%) !important;
+}
+.leaflet-tile-pane {
+  filter: brightness(0.7) contrast(1.1) saturate(0.8);
+}
+.leaflet-control-zoom a {
+  background: hsl(222 47% 12%) !important;
+  color: hsl(210 40% 90%) !important;
+  border-color: hsl(222 30% 18%) !important;
+}
