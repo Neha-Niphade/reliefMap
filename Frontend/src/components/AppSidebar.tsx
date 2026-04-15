@@ -1,6 +1,6 @@
-import { Map, MessageCircle, Bot, BarChart3, Shield } from 'lucide-react';
+import { Map, MessageCircle, Bot, BarChart3, Shield, User } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import {
   Sidebar,
   SidebarContent,
@@ -13,7 +13,8 @@ import {
 } from '@/components/ui/sidebar';
 
 const navItems = [
-  { title: 'Dashboard', url: '/', icon: Map },
+  { title: 'Dashboard', url: '/dashboard', icon: Map },
+  { title: 'Profile', url: '/profile', icon: User },
   { title: 'Chat', url: '/chat', icon: MessageCircle },
   { title: 'AI Assistant', url: '/assistant', icon: Bot },
   { title: 'Admin', url: '/admin', icon: BarChart3 },
@@ -28,14 +29,14 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         <div className={`p-4 ${collapsed ? 'px-2' : ''}`}>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg gradient-emergency flex items-center justify-center shrink-0">
+          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shrink-0 shadow-sm">
               <Shield className="w-4 h-4 text-primary-foreground" />
             </div>
             {!collapsed && (
-              <span className="font-display font-bold text-lg">Relief-Map</span>
+              <span className="font-display font-bold text-lg tracking-tight">Relief-Map</span>
             )}
-          </div>
+          </Link>
         </div>
 
         <SidebarGroup>
@@ -46,7 +47,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
-                      end={item.url === '/'}
+                      end={item.url === '/dashboard'}
                       className="hover:bg-sidebar-accent"
                       activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                     >

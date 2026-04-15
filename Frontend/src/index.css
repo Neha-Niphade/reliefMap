@@ -1,64 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
-
 @layer base {
   :root {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 96%;
+    /* LIGHT MODE: Relaxing Mint / Forest Aesthetic */
+    --background: 140 40% 97%; /* Very soft mint off-white */
+    --foreground: 160 60% 15%; /* Deep forest teal */
 
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 96%;
+    --card: 140 50% 92%; /* Light mint */
+    --card-foreground: 160 60% 15%;
 
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 40% 96%;
+    --popover: 140 50% 92%;
+    --popover-foreground: 160 60% 15%;
 
-    --primary: 0 84% 55%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 144 55% 65%; /* Soft vibrant mint */
+    --primary-foreground: 160 60% 15%;
 
-    --secondary: 222 30% 14%;
-    --secondary-foreground: 210 40% 96%;
+    --secondary: 0 0% 100%; /* Pure white */
+    --secondary-foreground: 160 40% 30%; 
 
-    --muted: 222 30% 14%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 140 30% 88%;
+    --muted-foreground: 160 30% 40%;
 
-    --accent: 142 72% 45%;
+    --accent: 144 55% 55%; 
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 55%;
+    --destructive: 0 84% 60%; 
     --destructive-foreground: 0 0% 100%;
 
-    --border: 222 30% 18%;
-    --input: 222 30% 18%;
-    --ring: 0 84% 55%;
+    --border: 140 30% 85%;
+    --input: 140 30% 85%;
+    --ring: 144 55% 65%;
 
-    --radius: 0.75rem;
+    --radius: 1.5rem;
 
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
     --info: 210 100% 52%;
     --info-foreground: 0 0% 100%;
-    --success: 142 72% 45%;
+    --success: 144 55% 45%;
     --success-foreground: 0 0% 100%;
-    --helper: 142 72% 45%;
-    --sos: 0 84% 55%;
-    --sos-glow: 0 84% 55%;
+    
+    --helper: 144 55% 45%;
+    --sos: 0 84% 60%;
+    --sos-glow: 0 84% 60%;
+    
     --pending: 38 92% 50%;
-    --accepted: 210 100% 52%;
-    --on-way: 38 70% 55%;
-    --completed: 142 72% 45%;
-    --escalated: 0 84% 55%;
+    --accepted: 144 55% 65%;
+    --on-way: 38 92% 50%;
+    --completed: 144 55% 45%;
+    --escalated: 0 84% 60%;
 
-    --sidebar-background: 222 47% 5%;
-    --sidebar-foreground: 210 40% 80%;
-    --sidebar-primary: 0 84% 55%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 30% 12%;
-    --sidebar-accent-foreground: 210 40% 96%;
-    --sidebar-border: 222 30% 15%;
-    --sidebar-ring: 0 84% 55%;
+    /* Sidebar Light */
+    --sidebar-background: 140 40% 95%;
+    --sidebar-foreground: 160 50% 25%;
+    --sidebar-primary: 160 60% 15%;
+    --sidebar-primary-foreground: 140 40% 97%;
+    --sidebar-accent: 140 50% 88%;
+    --sidebar-accent-foreground: 160 60% 15%;
+    --sidebar-border: 140 30% 85%;
+    --sidebar-ring: 144 55% 65%;
+  }
+
+  .dark {
+    /* DARK MODE: Deep Slate Grey with Mint Accents */
+    --background: 220 48% 8%; /* #0B1220 */
+    --foreground: 220 14% 91%; /* #E5E7EB */
+
+    --card: 221 39% 11%;  /* #111827 */
+    --card-foreground: 220 14% 91%;
+
+    --popover: 221 39% 11%;
+    --popover-foreground: 220 14% 91%;
+
+    --primary: 144 55% 55%; /* Soft vibrant mint accent */
+    --primary-foreground: 220 48% 8%;
+
+    --secondary: 215 27% 17%;
+    --secondary-foreground: 220 14% 91%;
+
+    --muted: 215 27% 17%;
+    --muted-foreground: 215 20% 65%; /* #9CA3AF */
+
+    --accent: 144 55% 55%;
+    --accent-foreground: 220 48% 8%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 215 19% 26%;
+    --input: 215 19% 26%;
+    --ring: 144 55% 55%;
+
+    /* Sidebar Dark */
+    --sidebar-background: 220 48% 8%;
+    --sidebar-foreground: 215 20% 65%;
+    --sidebar-primary: 144 55% 55%;
+    --sidebar-primary-foreground: 220 48% 8%;
+    --sidebar-accent: 215 27% 17%;
+    --sidebar-accent-foreground: 220 14% 91%;
+    --sidebar-border: 215 19% 26%;
+    --sidebar-ring: 144 55% 55%;
   }
 }
 
@@ -67,14 +112,49 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground font-sans antialiased transition-colors duration-500;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', sans-serif;
   }
+  
+  .glass-panel {
+    @apply bg-white/20 backdrop-blur-xl border border-white/30 shadow-xl;
+  }
+  .dark .glass-panel {
+    @apply bg-black/20 backdrop-blur-xl border border-white/10 shadow-xl;
+  }
 }
 
 @layer utilities {
+  /* Golden Ratio (phi = 1.618) Utilities */
+  .phi-aspect {
+    aspect-ratio: 1.618 / 1;
+  }
+  .phi-aspect-v {
+    aspect-ratio: 1 / 1.618;
+  }
+  .phi-grid-cols {
+    display: grid;
+    grid-template-columns: 1.618fr 1fr;
+  }
+  .phi-grid-cols-rev {
+    display: grid;
+    grid-template-columns: 1fr 1.618fr;
+  }
+  .phi-p {
+    padding: calc(var(--phi-base, 1rem) * 1.618);
+  }
+  .phi-gap {
+    gap: calc(var(--phi-base, 1rem) * 1.618);
+  }
+  .phi-leading {
+    line-height: 1.618;
+  }
+  .phi-tracking {
+    letter-spacing: -0.01618em;
+  }
+  
   .glow-sos {
     box-shadow: 0 0 30px hsl(var(--sos) / 0.4), 0 0 60px hsl(var(--sos) / 0.2);
   }
@@ -85,17 +165,21 @@
     animation: pulseSOS 2s ease-in-out infinite;
   }
   .gradient-emergency {
-    background: linear-gradient(135deg, hsl(var(--sos)) 0%, hsl(0 84% 40%) 100%);
+    background: linear-gradient(135deg, hsl(var(--sos)) 0%, hsl(var(--sos) / 0.8) 100%);
   }
   .gradient-safe {
-    background: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(160 72% 35%) 100%);
+    background: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(var(--success) / 0.8) 100%);
   }
-  .gradient-dark {
-    background: linear-gradient(180deg, hsl(222 47% 8%) 0%, hsl(222 47% 4%) 100%);
+  .gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(144 55% 55%) 100%);
   }
   .status-badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide;
   }
+}
+
+:root {
+  --phi-base: 1rem;
 }
 
 @keyframes pulseSOS {
@@ -103,15 +187,17 @@
   50% { box-shadow: 0 0 40px hsl(var(--sos) / 0.6), 0 0 80px hsl(var(--sos) / 0.3); transform: scale(1.02); }
 }
 
-/* Leaflet overrides for dark theme */
+/* Leaflet overrides for beautiful Light/Dark support */
 .leaflet-container {
-  background: hsl(222 47% 6%) !important;
+  background: hsl(var(--background)) !important;
+  transition: filter 0.5s ease;
 }
-.leaflet-tile-pane {
-  filter: brightness(0.7) contrast(1.1) saturate(0.8);
+
+.dark .leaflet-tile-pane {
+  filter: invert(100%) hue-rotate(180deg) brightness(85%) contrast(85%);
 }
-.leaflet-control-zoom a {
-  background: hsl(222 47% 12%) !important;
-  color: hsl(210 40% 90%) !important;
-  border-color: hsl(222 30% 18%) !important;
+.dark .leaflet-control-zoom a {
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--foreground)) !important;
+  border-color: hsl(var(--border)) !important;
 }

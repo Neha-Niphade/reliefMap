@@ -7,7 +7,10 @@ import Index from "./pages/Index.tsx";
 import ChatPage from "./pages/ChatPage.tsx";
 import AssistantPage from "./pages/AssistantPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
+import AuthPage from "./pages/AuthPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import ProfilePage from "./pages/ProfilePage.tsx";
+import LandingPage from "./pages/LandingPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -18,13 +21,17 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/dashboard" element={<Index />} />
+          <Route path="/auth" element={<AuthPage />} />
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/assistant" element={<AssistantPage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+
     </TooltipProvider>
   </QueryClientProvider>
 );

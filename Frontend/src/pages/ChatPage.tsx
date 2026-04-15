@@ -1,33 +1,53 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/AppLayout';
-import { mockChats, type ChatThread, type ChatMessage } from '@/data/mockData';
 import { Send, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot, query, orderBy, addDoc } from 'firebase/firestore';
 
 function ChatPage() {
-  const [selectedChat, setSelectedChat] = useState<ChatThread | null>(mockChats[0]);
+  const [selectedChat, setSelectedChat] = useState<any | null>(null);
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>(
-    Object.fromEntries(mockChats.map(c => [c.id, c.messages]))
-  );
+  const [threads, setThreads] = useState<any[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
+  
+  const currentUserId = localStorage.getItem('user_id') || 'anonymous';
 
-  const handleSend = () => {
+  // Load active chat threads
+  useEffect(() => {
+    if (!db) return;
+    const q = query(collection(db, 'threads'));
+    const unSub = onSnapshot(q, snapshot => {
+      const liveData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setThreads(liveData);
+    });
+    return () => unSub();
+  }, []);
+
+  // Load messages for selected chat
+  useEffect(() => {
+    if (!db || !selectedChat) return;
+    const q = query(collection(db, `threads/${selectedChat.id}/messages`), orderBy('timestamp', 'asc'));
+    const unSub = onSnapshot(q, snapshot => {
+      setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    return () => unSub();
+  }, [selectedChat]);
+
+  const handleSend = async () => {
     if (!input.trim() || !selectedChat) return;
-    const msg: ChatMessage = {
-      id: `m_${Date.now()}`,
-      senderId: 'me',
-      senderName: 'You',
-      content: input,
-      timestamp: new Date(),
-    };
-    setMessages(prev => ({
-      ...prev,
-      [selectedChat.id]: [...(prev[selectedChat.id] || []), msg],
-    }));
-    setInput('');
+    try {
+      await addDoc(collection(db, `threads/${selectedChat.id}/messages`), {
+        senderId: currentUserId,
+        senderName: localStorage.getItem('user_name') || 'You',
+        content: input,
+        timestamp: new Date().toISOString()
+      });
+      setInput('');
+    } catch (e) {
+      console.error(e);
+    }
   };
-
-  const currentMessages = selectedChat ? messages[selectedChat.id] || [] : [];
 
   return (
     <AppLayout>
@@ -38,7 +58,9 @@ function ChatPage() {
             <h2 className="font-display font-bold">Messages</h2>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {mockChats.map(chat => (
+            {threads.length === 0 ? (
+               <div className="p-6 text-sm text-center text-muted-foreground">No active conversations. Start one from the map!</div>
+            ) : threads.map(chat => (
               <button
                 key={chat.id}
                 onClick={() => setSelectedChat(chat)}
@@ -46,7 +68,7 @@ function ChatPage() {
                   selectedChat?.id === chat.id ? 'bg-secondary' : ''
                 }`}
               >
-                <p className="font-semibold text-sm truncate">{chat.participantNames.join(' & ')}</p>
+                <p className="font-semibold text-sm truncate">{chat.participantNames?.join(' & ') || 'Chat'}</p>
                 <p className="text-xs text-muted-foreground truncate mt-1">{chat.lastMessage}</p>
               </button>
             ))}
@@ -57,23 +79,23 @@ function ChatPage() {
         {selectedChat ? (
           <div className="flex-1 flex flex-col">
             <div className="p-4 border-b border-border">
-              <p className="font-display font-bold text-sm">{selectedChat.participantNames.join(' & ')}</p>
+              <p className="font-display font-bold text-sm">{selectedChat.participantNames?.join(' & ') || 'Chat'}</p>
               <p className="text-xs text-muted-foreground">Request #{selectedChat.requestId}</p>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {currentMessages.map(msg => (
+              {messages.map(msg => (
                 <motion.div
                   key={msg.id}
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`flex ${msg.senderId === 'me' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`}
                 >
                   <div className={`max-w-xs px-4 py-2.5 rounded-2xl text-sm ${
-                    msg.senderId === 'me'
+                    msg.senderId === currentUserId
                       ? 'gradient-emergency text-primary-foreground rounded-br-md'
                       : 'bg-secondary text-secondary-foreground rounded-bl-md'
                   }`}>
-                    {msg.senderId !== 'me' && (
+                    {msg.senderId !== currentUserId && (
                       <p className="text-xs font-semibold mb-1 opacity-70">{msg.senderName}</p>
                     )}
                     {msg.content}

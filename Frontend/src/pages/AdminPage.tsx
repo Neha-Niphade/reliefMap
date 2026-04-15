@@ -1,20 +1,66 @@
+import { useEffect, useState } from 'react';
 import { AppLayout } from '@/components/AppLayout';
-import { mockRequests, mockHelpers, statsData, categoryIcons, type RequestCategory } from '@/data/mockData';
-import { AlertTriangle, TrendingUp, MapPin, Clock, Users, ShieldCheck } from 'lucide-react';
+import { CategoryIcons } from '@/components/RequestCard';
+import { AlertTriangle, TrendingUp, MapPin, Clock, Users, ShieldCheck, Info } from 'lucide-react';
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 
 function AdminPage() {
-  const categoryCount = mockRequests.reduce((acc, r) => {
-    acc[r.category] = (acc[r.category] || 0) + 1;
+  const [requests, setRequests] = useState<any[]>([]);
+  const [helpers, setHelpers] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    totalHelped: 0, 
+    avgResponseTime: '0 min'
+  });
+
+  useEffect(() => {
+    if (!db) return;
+    const qPosts = query(collection(db, 'posts'));
+    const unSubPosts = onSnapshot(qPosts, (snapshot) => {
+      const liveData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setRequests(liveData);
+      
+      const completed = liveData.filter(p => ['completed', 'resolved'].includes((p.status || '').toLowerCase())).length;
+      let totalMins = 0;
+      let respCount = 0;
+      liveData.forEach((p: any) => {
+        if (p.createdAt && p.acceptedAt) {
+          const cTime = new Date(p.createdAt).getTime();
+          const aTime = new Date(p.acceptedAt).getTime();
+          if (!isNaN(cTime) && !isNaN(aTime)) {
+            totalMins += Math.abs(aTime - cTime) / 60000;
+            respCount++;
+          }
+        }
+      });
+      const avgStr = respCount > 0 ? (totalMins / respCount).toFixed(1) + ' min' : '0 min';
+      
+      setStats({ totalHelped: completed, avgResponseTime: avgStr });
+    });
+    
+    const qUsers = query(collection(db, 'users'));
+    const unSubUsers = onSnapshot(qUsers, (snapshot) => {
+      const liveData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setHelpers(liveData);
+    });
+    
+    return () => { unSubPosts(); unSubUsers(); };
+  }, []);
+
+  const categoryCount = requests.reduce((acc, r) => {
+    const cat = r.category || 'other';
+    acc[cat] = (acc[cat] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  const statusCount = mockRequests.reduce((acc, r) => {
-    acc[r.status] = (acc[r.status] || 0) + 1;
+  const statusCount = requests.reduce((acc, r) => {
+    const st = r.status || 'requested';
+    acc[st] = (acc[st] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  const criticalRequests = mockRequests.filter(r => r.urgency === 'critical');
-  const activeHelpers = mockHelpers.filter(h => h.isAvailable);
+  const criticalRequests = requests.filter(r => (r.urgency || '').toLowerCase() === 'critical');
+  const activeHelpers = helpers.filter(h => h.isAvailable);
 
   return (
     <AppLayout>
@@ -27,10 +73,10 @@ function AdminPage() {
         {/* Key metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { icon: Users, label: 'Total Helped', value: statsData.totalHelped.toLocaleString(), color: 'text-accent', bg: 'bg-accent/10' },
-            { icon: AlertTriangle, label: 'Critical Active', value: statsData.criticalActive, color: 'text-sos', bg: 'bg-sos/10' },
-            { icon: Clock, label: 'Avg Response', value: statsData.avgResponseTime, color: 'text-info', bg: 'bg-info/10' },
-            { icon: ShieldCheck, label: 'Helpers Online', value: statsData.helpersOnline, color: 'text-success', bg: 'bg-success/10' },
+            { icon: Users, label: 'Total Helped', value: stats.totalHelped.toLocaleString(), color: 'text-accent', bg: 'bg-accent/10' },
+            { icon: AlertTriangle, label: 'Critical Active', value: criticalRequests.length, color: 'text-sos', bg: 'bg-sos/10' },
+            { icon: Clock, label: 'Avg Response', value: stats.avgResponseTime, color: 'text-info', bg: 'bg-info/10' },
+            { icon: ShieldCheck, label: 'Helpers Online', value: activeHelpers.length, color: 'text-success', bg: 'bg-success/10' },
           ].map(m => (
             <div key={m.label} className="bg-card border border-border rounded-xl p-5">
               <div className={`w-10 h-10 rounded-lg ${m.bg} flex items-center justify-center mb-3`}>
@@ -52,12 +98,17 @@ function AdminPage() {
             <div className="space-y-3">
               {Object.entries(categoryCount).map(([cat, count]) => (
                 <div key={cat} className="flex items-center gap-3">
-                  <span className="text-lg w-8">{categoryIcons[cat as RequestCategory]}</span>
+                  <div className="w-8 flex justify-center">
+                    {(() => {
+                      const CatIcon = CategoryIcons[cat.toLowerCase()] || Info;
+                      return <CatIcon className="w-5 h-5 text-muted-foreground" />;
+                    })()}
+                  </div>
                   <span className="text-sm flex-1 capitalize">{cat.replace('_', ' ')}</span>
                   <div className="flex-1 bg-secondary rounded-full h-2">
                     <div
                       className="h-2 rounded-full gradient-emergency"
-                      style={{ width: `${(count / mockRequests.length) * 100}%` }}
+                      style={{ width: `${(count / (requests.length || 1)) * 100}%` }}
                     />
                   </div>
                   <span className="text-sm font-bold w-6 text-right">{count}</span>
@@ -80,7 +131,7 @@ function AdminPage() {
                 };
                 return (
                   <div key={status} className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${colors[status]}`} />
+                    <div className={`w-3 h-3 rounded-full ${colors[status.toLowerCase()] || 'bg-border'}`} />
                     <span className="text-sm flex-1 capitalize">{status.replace('_', ' ')}</span>
                     <span className="text-sm font-bold">{count}</span>
                   </div>
@@ -98,11 +149,16 @@ function AdminPage() {
             <div className="space-y-2">
               {criticalRequests.map(r => (
                 <div key={r.id} className="p-3 rounded-lg bg-sos/5 border border-sos/20 flex items-start gap-3">
-                  <span className="text-lg">{categoryIcons[r.category]}</span>
+                  <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+                    {(() => {
+                      const CatIcon = CategoryIcons[(r.category || '').toLowerCase()] || Info;
+                      return <CatIcon className="w-4 h-4 text-destructive" />;
+                    })()}
+                  </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold">{r.userName}</p>
+                    <p className="text-sm font-semibold">{r.userName || r.userId}</p>
                     <p className="text-xs text-muted-foreground">{r.description}</p>
-                    <p className="text-xs text-sos mt-1">{r.status.replace('_', ' ').toUpperCase()} · {r.distance?.toFixed(1)} km</p>
+                    <p className="text-xs text-sos mt-1">{(r.status || '').replace('_', ' ').toUpperCase()}</p>
                   </div>
                 </div>
               ))}
@@ -119,7 +175,7 @@ function AdminPage() {
               {activeHelpers.map(h => (
                 <div key={h.id} className="p-3 rounded-lg bg-success/5 border border-success/20 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full gradient-safe flex items-center justify-center text-xs font-bold text-success-foreground">
-                    {h.name.split(' ').map(n => n[0]).join('')}
+                    {(h.name || '?').split(' ').map((n: string) => n[0]).join('')}
                   </div>
                   <div>
                     <p className="text-sm font-semibold">{h.name}</p>
