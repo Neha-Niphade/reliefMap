@@ -19,14 +19,32 @@ export function SOSButton() {
   const handleSOS = () => setIsExpanded(true);
   const handleClose = () => { setIsExpanded(false); setIsRecording(false); setSent(false); };
 
-  const handleQuickSelect = (label: string) => {
+  const handleQuickSelect = async (label: string) => {
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL}/triage/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: label, userId: 'demo_user', location: { lat: 28.6139, lng: 77.2090} })
+      });
+    } catch (err) {
+      console.error("SOS Error:", err);
+    }
     setSent(true);
     setTimeout(() => { setSent(false); setIsExpanded(false); }, 2000);
   };
 
-  const handleRecord = () => {
+  const handleRecord = async () => {
     setIsRecording(!isRecording);
     if (isRecording) {
+      try {
+        await fetch(`${import.meta.env.VITE_API_URL}/triage/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: "Recorded emergency voice note", userId: 'demo_user', location: { lat: 28.6139, lng: 77.2090} })
+        });
+      } catch (err) {
+        console.error("SOS Error:", err);
+      }
       setSent(true);
       setTimeout(() => { setSent(false); setIsExpanded(false); setIsRecording(false); }, 2000);
     }

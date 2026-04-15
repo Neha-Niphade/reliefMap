@@ -16,21 +16,7 @@ const suggestions = [
   'How to help someone having a panic attack?',
 ];
 
-const aiResponses: Record<string, string> = {
-  'earthquake': '🏠 **During an Earthquake:**\n\n1. **DROP** to your hands and knees\n2. **COVER** under a sturdy desk or table\n3. **HOLD ON** until shaking stops\n4. Stay away from windows and heavy objects\n5. If outdoors, move to an open area\n6. After shaking stops, check for injuries\n\n⚠️ Do NOT run outside during shaking.',
-  'cpr': '❤️ **CPR Steps:**\n\n1. Check for responsiveness — tap and shout\n2. Call emergency services\n3. Place heel of hand on center of chest\n4. Push hard and fast — 100-120 compressions/min\n5. Push at least 2 inches deep\n6. Give 2 rescue breaths after every 30 compressions\n\n📱 Use the SOS button for immediate help.',
-  'burn': '🔥 **First Aid for Burns:**\n\n1. Cool the burn under cool running water for 10-20 minutes\n2. Remove clothing/jewelry near the burn (if not stuck)\n3. Cover with a clean, non-fluffy dressing\n4. Do NOT apply ice, butter, or toothpaste\n5. Take pain relief if needed\n6. Seek medical help for severe burns\n\n🏥 Press SOS for medical emergency nearby.',
-  'panic': '🧘 **Helping Someone Having a Panic Attack:**\n\n1. Stay calm and reassuring\n2. Speak in short, simple sentences\n3. Help them breathe slowly — "Breathe in for 4, hold for 4, out for 4"\n4. Ground them: "Name 5 things you can see"\n5. Don\'t leave them alone\n6. Avoid saying "calm down"\n\n💚 You\'re doing great by asking!',
-};
-
-function getAIResponse(input: string): string {
-  const lower = input.toLowerCase();
-  if (lower.includes('earthquake')) return aiResponses['earthquake'];
-  if (lower.includes('cpr')) return aiResponses['cpr'];
-  if (lower.includes('burn') || lower.includes('fire')) return aiResponses['burn'];
-  if (lower.includes('panic') || lower.includes('anxiety')) return aiResponses['panic'];
-  return `I understand you need help with: "${input}"\n\n🤖 In the full version, I\'ll provide AI-powered guidance using real-time analysis. For now, here are general tips:\n\n1. Stay calm and assess the situation\n2. Use the **SOS button** for immediate help\n3. Contact emergency services if life-threatening\n4. Nearby helpers will be notified automatically\n\nStay safe! 💚`;
-}
+// AI responses removed - now fetched from backend
 
 function AssistantPage() {
   const [messages, setMessages] = useState<AIMessage[]>([
@@ -38,13 +24,32 @@ function AssistantPage() {
   ]);
   const [input, setInput] = useState('');
 
-  const handleSend = (text?: string) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSend = async (text?: string) => {
     const msg = text || input;
-    if (!msg.trim()) return;
+    if (!msg.trim() || isLoading) return;
+    
     const userMsg: AIMessage = { id: `u_${Date.now()}`, role: 'user', content: msg };
-    const aiMsg: AIMessage = { id: `a_${Date.now()}`, role: 'assistant', content: getAIResponse(msg) };
-    setMessages(prev => [...prev, userMsg, aiMsg]);
+    setMessages(prev => [...prev, userMsg]);
     setInput('');
+    setIsLoading(true);
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/chatbot/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: msg })
+      });
+      const data = await res.json();
+      const aiMsg: AIMessage = { id: `a_${Date.now()}`, role: 'assistant', content: data.reply || data.error || "Service unavailable." };
+      setMessages(prev => [...prev, aiMsg]);
+    } catch (e) {
+      const aiMsg: AIMessage = { id: `a_${Date.now()}`, role: 'assistant', content: "Failed to connect to backend AI server." };
+      setMessages(prev => [...prev, aiMsg]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -112,7 +117,7 @@ function AssistantPage() {
               placeholder="Ask about emergency procedures..."
               className="flex-1 bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-info"
             />
-            <button onClick={() => handleSend()} className="w-10 h-10 rounded-xl bg-info flex items-center justify-center shrink-0">
+            <button disabled={isLoading} onClick={() => handleSend()} className="w-10 h-10 rounded-xl bg-info flex items-center justify-center shrink-0 disabled:opacity-50">
               <Send className="w-4 h-4 text-info-foreground" />
             </button>
           </div>

@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Backend, Secrets, and Databases
+.env
+firebase-adminsdk.json
+Backend/venv/
+__pycache__/
+*.sqlite3
+*.pyc
