@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   APIProvider,
   Map,
@@ -13,6 +13,8 @@ import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { useUserMap } from '@/hooks/useUserMap';
 
+declare const google: any;
+
 const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string;
 const DEFAULT_CENTER = { lat: 28.6139, lng: 77.2090 };
 
@@ -26,9 +28,9 @@ const urgencyColors: Record<string, string> = {
 };
 
 // ── 2 km dashed radius circle drawn as an SVG overlay ────────────────────────
-function RadiusCircle({ center }: { center: google.maps.LatLngLiteral }) {
+function RadiusCircle({ center }: { center: any }) {
   const map = useMap();
-  const circleRef = useRef<google.maps.Circle | null>(null);
+  const circleRef = useRef<any>(null);
 
   useEffect(() => {
     if (!map) return;
@@ -108,6 +110,20 @@ function RequestMarker({ request }: { request: any }) {
   );
 }
 
+// ── Helper Safety Zone (Heatmap-style glow) ──────────────────────────────────
+function SafeZoneGlow({ position }: { position: { lat: number, lng: number } }) {
+  return (
+    <AdvancedMarker position={position} zIndex={-1}>
+       <div className="relative flex items-center justify-center">
+          {/* Multi-layered blue glow to simulate heatmap/safe zone */}
+          <div className="absolute w-[300px] h-[300px] rounded-full bg-blue-500/10 blur-3xl animate-pulse" />
+          <div className="absolute w-[150px] h-[150px] rounded-full bg-blue-400/10 blur-2xl" />
+          <div className="absolute w-[60px] h-[60px] rounded-full bg-blue-500/5 blur-xl" />
+       </div>
+    </AdvancedMarker>
+  );
+}
+
 // ── Helper (available volunteer) marker ──────────────────────────────────────
 function HelperMarker({ helper }: { helper: any }) {
   const map = useMap();
@@ -151,7 +167,7 @@ function HelperMarker({ helper }: { helper: any }) {
 }
 
 // ── User Location Marker ──────────────────────────────────────────────────────
-function UserMarker({ center }: { center: google.maps.LatLngLiteral }) {
+function UserMarker({ center }: { center: any }) {
   return (
     <AdvancedMarker position={center}>
       {/* Pulsing blue dot */}
@@ -164,7 +180,7 @@ function UserMarker({ center }: { center: google.maps.LatLngLiteral }) {
 }
 
 // ── Custom Map UI Controls ───────────────────────────────────────────────────
-function MapControlsOverlay({ userCenter }: { userCenter: google.maps.LatLngLiteral }) {
+function MapControlsOverlay({ userCenter }: { userCenter: any }) {
   const map = useMap();
 
   if (!map) return null;
@@ -226,7 +242,7 @@ function MapControlsOverlay({ userCenter }: { userCenter: google.maps.LatLngLite
 export function EmergencyMap() {
   const [requests, setRequests] = useState<any[]>([]);
   const [helpers, setHelpers]   = useState<any[]>([]);
-  const [userCenter, setUserCenter] = useState<google.maps.LatLngLiteral>(DEFAULT_CENTER);
+  const [userCenter, setUserCenter] = useState<any>(DEFAULT_CENTER);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -239,11 +255,13 @@ export function EmergencyMap() {
     if (!db) return;
 
     const unSubPosts = onSnapshot(query(collection(db, 'posts')), snap => {
-      setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const allPosts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const activePosts = allPosts.filter((p: any) => !['completed', 'resolved'].includes((p.status || '').toLowerCase()));
+      setRequests(activePosts);
     });
 
     const unSubUsers = onSnapshot(query(collection(db, 'users')), snap => {
-      setHelpers(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(h => h.isAvailable));
+      setHelpers(snap.docs.map(d => ({ id: d.id, ...d.data() }) as any).filter((h: any) => h.isAvailable));
     });
 
     return () => { unSubPosts(); unSubUsers(); };
@@ -260,18 +278,6 @@ export function EmergencyMap() {
           gestureHandling="greedy"
           className="w-full h-full"
           style={{ borderRadius: '0.75rem' }}
-          // Styled map — dark/clean aesthetic matching the app theme
-          styles={[
-            { elementType: 'geometry',            stylers: [{ color: '#f5f5f9' }] },
-            { elementType: 'labels.text.fill',    stylers: [{ color: '#1a3a2a' }] },
-            { elementType: 'labels.text.stroke',  stylers: [{ color: '#ffffff' }] },
-            { featureType: 'road',                elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
-            { featureType: 'road',                elementType: 'geometry.stroke', stylers: [{ color: '#e0e0e0' }] },
-            { featureType: 'water',               elementType: 'geometry', stylers: [{ color: '#c8e6f5' }] },
-            { featureType: 'poi.park',            elementType: 'geometry', stylers: [{ color: '#d4edda' }] },
-            { featureType: 'transit',             elementType: 'geometry', stylers: [{ color: '#eeeeee' }] },
-            { featureType: 'administrative',      elementType: 'geometry.stroke', stylers: [{ color: '#c9c9c9' }] },
-          ]}
         >
           {/* 2 km radius ring */}
           <RadiusCircle center={userCenter} />
@@ -282,8 +288,16 @@ export function EmergencyMap() {
           {/* SOS requests */}
           {requests.map(r => <RequestMarker key={r.id} request={r} />)}
 
-          {/* Available helpers */}
-          {helpers.map(h => <HelperMarker key={h.id} helper={h} />)}
+          {/* Available helpers & their Safe Zones */}
+          {helpers.map(h => (
+            <React.Fragment key={h.id}>
+               {/* Show safety zone glow around helpers in ALL modes to guide victims */}
+               {h.location?.lat && h.location?.lng && (
+                 <SafeZoneGlow position={{ lat: h.location.lat, lng: h.location.lng }} />
+               )}
+               <HelperMarker helper={h} />
+            </React.Fragment>
+          ))}
 
           {/* Custom Overlay Controls */}
           <MapControlsOverlay userCenter={userCenter} />
