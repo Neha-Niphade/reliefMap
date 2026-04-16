@@ -1,0 +1,375 @@
+# 📄 PRODUCT REQUIREMENTS DOCUMENT (PRD)
+
+## 🧠 Project Title
+
+Relief-Map: Hyper-Local Crowdsourced Aid Hub
+
+---
+
+## 🎯 Product Vision
+
+Develop a real-time, AI-powered, hyper-local emergency and safety platform that connects people in need with nearby helpers (within 2 km radius), supporting both disaster situations and day-to-day safety needs such as women safety, elderly assistance, and medical emergencies.
+
+The system must provide **instant help access (1-click SOS), real-time coordination, AI assistance, and government-level monitoring dashboards**.
+
+---
+
+## 🚨 Problem Statement
+
+In both disasters and everyday emergencies:
+
+* There is no **instant, hyper-local coordination system**
+* People nearby are willing to help but cannot discover requests
+* Response delays can cost lives
+* Vulnerable groups (women, elderly) lack fast-access help tools
+* Authorities lack real-time visibility of ground-level situations
+
+---
+
+## 💡 Solution Overview
+
+Build a **single unified platform** with:
+
+* A **shared dashboard for all users**
+* A **helper availability toggle system**
+* A **1-click SOS emergency system**
+* AI-powered assistance and prioritization
+* Real-time updates and notifications
+* Multilingual accessibility
+* A **government/admin monitoring dashboard**
+
+---
+
+# 🔥 CORE PRODUCT FEATURES
+
+---
+
+## 1. 🧑‍🤝‍🧑 Unified Dashboard + Helper Toggle System
+
+* Single dashboard for all users
+* Toggle option:
+  👉 “Available to Help” (ON/OFF)
+
+### Behavior:
+
+* Users with toggle ON:
+
+  * Receive nearby help notifications
+  * Appear as helpers on map
+* Users with toggle OFF:
+
+  * Do not receive help notifications
+  * Can still request help anytime
+
+---
+
+## 2. 🚨 1-Click SOS Emergency System (CRITICAL FEATURE)
+
+### For users needing immediate help:
+
+* SOS button visible prominently
+* On click:
+
+  * Option 1: 🎙️ Record voice message describing situation
+  * Option 2: 📋 Quick-select predefined emergency options
+
+### Smart Options:
+
+* Dynamically generated based on:
+
+  * Gender (e.g., women safety options)
+  * Situation (disaster vs daily emergency)
+  * Location context
+
+Examples:
+
+* “I am in danger”
+* “Medical emergency”
+* “Need immediate rescue”
+* “Unsafe situation”
+
+---
+
+## 3. 🎙️ Voice-to-Text AI Processing
+
+* Recorded voice is:
+
+  * Converted to text (Speech-to-Text)
+  * Sent to helpers as readable message
+* Helps in:
+
+  * Faster understanding
+  * Accessibility
+
+---
+
+## 4. 📍 Geo-Tagged Requests & Offers
+
+Each request includes:
+
+* GPS location
+* Category
+* Urgency
+* Description (text/AI generated)
+
+---
+
+## 5. 📡 Hyper-Local Feed (≤ 2 KM)
+
+* Only show nearby requests
+* Use GeoHash-based filtering (Firestore)
+
+---
+
+## 6. ⚡ Real-Time Sync
+
+* New requests appear instantly
+* Status updates sync instantly
+* Use Firebase real-time listeners
+
+---
+
+## 7. 🗺️ Map-Based System
+
+* Google Maps integration
+* Show:
+
+  * 🔴 Requesters
+  * 🟢 Helpers (toggle ON users)
+* Real-time movement and updates
+
+---
+
+## 8. 💬 Real-Time Chat System
+
+* Communication between helper and requester
+* Auto-expire after resolution
+
+---
+
+## 9. 🔔 Smart Notification System
+
+### Trigger notifications:
+
+* New SOS nearby
+* New request nearby
+* Help accepted
+* Status updates
+
+---
+
+## 10. 📊 Status & Flag System (IMPORTANT)
+
+Each request will maintain states:
+
+* 🟡 Requested
+* 🔵 Help Accepted
+* 🟠 Help On The Way
+* 🟢 Help Completed
+* 🔴 Emergency Escalated
+
+These flags must update in real-time.
+
+---
+
+## 11. 🌍 Multilingual Support
+
+* App supports multiple regional languages
+* Use Google Multilingual APIs
+
+### Features:
+
+* Translate UI dynamically
+* Translate requests for helpers
+* Voice input in native language
+
+---
+
+## 12. 🤖 AI INTEGRATION (CRITICAL)
+
+### A. AI Chatbot Assistant
+
+* Helps users understand what to do
+* Provides guidance in emergencies
+
+---
+
+### B. AI Triage System
+
+* Classifies requests automatically:
+
+  * Category
+  * Urgency
+* Extracts key info from text/voice
+
+---
+
+### C. AI Priority Ranking
+
+* Rank requests based on:
+
+  * Urgency
+  * Distance
+  * Time
+
+---
+
+## 13. 📈 Stats & Impact Dashboard
+
+Display:
+
+* Number of people helped
+* Active requests
+* Completed requests
+* Response times
+
+---
+
+## 14. 🛡️ Admin / Government Master Dashboard
+
+### Features:
+
+* Real-time map view of:
+
+  * All requests
+  * All helpers
+* Heatmaps of crisis zones
+* Analytics:
+
+  * High-risk areas
+  * Response times
+* Useful for:
+
+  * Government
+  * NGOs
+
+---
+
+## 15. 📶 Offline Support
+
+* Cache nearby data
+* Sync when network returns
+
+---
+
+# 🏗️ TECHNICAL ARCHITECTURE
+
+---
+
+## Frontend
+
+* React.js (Vite)
+* TailwindCSS
+* Google Maps API
+
+---
+
+## Backend (Serverless)
+
+* Firebase SDK
+* Firebase Cloud Functions
+
+---
+
+## Database (MANDATORY)
+
+* Firebase Firestore
+* GeoHash-based queries
+
+---
+
+## Authentication
+
+* Firebase Auth (Phone OTP)
+
+---
+
+## Notifications
+
+* Firebase Cloud Messaging (FCM)
+
+---
+
+## AI Integration
+
+* Google Gemini API / Vertex AI
+* Google Speech-to-Text API
+* Google Translation API
+
+---
+
+# 🗄️ DATA MODEL
+
+---
+
+## posts
+
+* id
+* type
+* category
+* description
+* voiceText
+* location {lat, lng, geohash}
+* urgency
+* status
+* userId
+* createdAt
+
+---
+
+## users
+
+* uid
+* name
+* phone
+* isHelperAvailable (toggle)
+* languagePreference
+
+---
+
+## chats
+
+* chatId
+* participants
+* messages
+
+---
+
+# 🔄 SYSTEM WORKFLOW
+
+1. User logs in via Firebase Auth
+2. User sets helper availability toggle
+3. User creates request OR presses SOS
+4. Voice/text processed via AI
+5. Stored in Firestore
+6. Nearby helpers (toggle ON) get notified
+7. Helper accepts request
+8. Chat initiated
+9. Status updates tracked
+10. Request resolved
+
+---
+
+# 🎯 UNIQUE VALUE PROPOSITION
+
+* 1-click SOS system
+* Hyper-local (2 km) real-time coordination
+* AI-powered assistance
+* Multilingual accessibility
+* Daily safety + disaster support
+* Government monitoring dashboard
+
+---
+
+# 🚀 FUTURE SCOPE
+
+* Predictive AI alerts
+* Drone integration
+* Wearable integration (smartwatch SOS)
+* NGO integrations
+
+---
+
+# 🎤 FINAL OBJECTIVE
+
+Build a scalable, real-time, AI-powered emergency response and daily safety system using Firebase that reduces response time and saves lives.

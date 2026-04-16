@@ -27,10 +27,12 @@ class AI_TriageView(APIView):
         prompt = f"""
         You are an emergency triage AI for the Relief-Map hyper-local system.
         Analyze the following emergency request from a user: "{user_message}"
+        Consider factors like keywords, user vulnerability, and situational danger.
         
-        Classify it and return ONLY a valid JSON object with these keys:
-        - "category": (e.g., Medical, Rescue, Women Safety, Fire, General)
+        Classify it and return ONLY a valid JSON object with these exact keys:
+        - "category": (Medical, Rescue, Women Safety, Fire, General)
         - "urgency": (Critical, High, Medium, Low)
+        - "priority_score": (integer 1-100, where 100 is maximum life-threatening severity)
         - "summary": (A concise, 1-sentence version of their issue)
         """
         
@@ -39,6 +41,11 @@ class AI_TriageView(APIView):
             # Clean up potential markdown formatting in response
             text = response.text.replace("```json", "").replace("```", "").strip()
             ai_data = json.loads(text)
+            
+            p_score = ai_data.get('priority_score', 50)
+            urgency = ai_data.get('urgency', 'Medium')
+            import random
+            loc_risk = random.randint(1, 10) # Mock risk score
             
             # Prepare post for Firestore
             db = get_firestore_client()
@@ -50,7 +57,11 @@ class AI_TriageView(APIView):
                     "category": ai_data.get('category'),
                     "description": ai_data.get('summary') + " | Original: " + user_message,
                     "location": location,
-                    "urgency": ai_data.get('urgency'),
+                    "urgency": urgency,
+                    "priority_level": urgency,
+                    "priority_score": p_score,
+                    "escalation_stage": 0,
+                    "location_risk_score": loc_risk,
                     "status": "Requested",
                     "userId": user_id,
                     "createdAt": datetime.utcnow().isoformat() + "Z"

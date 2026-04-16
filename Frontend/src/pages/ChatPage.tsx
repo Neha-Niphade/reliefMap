@@ -4,12 +4,14 @@ import { Send, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query, orderBy, addDoc } from 'firebase/firestore';
+import { useUserMap } from '@/hooks/useUserMap';
 
 function ChatPage() {
   const [selectedChat, setSelectedChat] = useState<any | null>(null);
   const [input, setInput] = useState('');
   const [threads, setThreads] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
+  const { getUserName } = useUserMap();
   
   const currentUserId = localStorage.getItem('user_id') || 'anonymous';
 
@@ -39,7 +41,6 @@ function ChatPage() {
     try {
       await addDoc(collection(db, `threads/${selectedChat.id}/messages`), {
         senderId: currentUserId,
-        senderName: localStorage.getItem('user_name') || 'You',
         content: input,
         timestamp: new Date().toISOString()
       });
@@ -68,8 +69,12 @@ function ChatPage() {
                   selectedChat?.id === chat.id ? 'bg-secondary' : ''
                 }`}
               >
-                <p className="font-semibold text-sm truncate">{chat.participantNames?.join(' & ') || 'Chat'}</p>
-                <p className="text-xs text-muted-foreground truncate mt-1">{chat.lastMessage}</p>
+                <p className="font-semibold text-sm truncate">
+                  {chat.participantIds?.filter((id: string) => id !== currentUserId).map((id: string) => getUserName(id)).join(' & ') || 'Chat'}
+                </p>
+                <p className="text-xs text-muted-foreground truncate mt-1">
+                  {chat.lastSenderId === currentUserId ? 'You: ' : `${getUserName(chat.lastSenderId)}: `}{chat.lastMessage}
+                </p>
               </button>
             ))}
           </div>
@@ -79,7 +84,9 @@ function ChatPage() {
         {selectedChat ? (
           <div className="flex-1 flex flex-col">
             <div className="p-4 border-b border-border">
-              <p className="font-display font-bold text-sm">{selectedChat.participantNames?.join(' & ') || 'Chat'}</p>
+              <p className="font-display font-bold text-sm">
+                Talking with {selectedChat.participantIds?.filter((id: string) => id !== currentUserId).map((id: string) => getUserName(id)).join(' & ') || 'Someone'}
+              </p>
               <p className="text-xs text-muted-foreground">Request #{selectedChat.requestId}</p>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -96,7 +103,7 @@ function ChatPage() {
                       : 'bg-secondary text-secondary-foreground rounded-bl-md'
                   }`}>
                     {msg.senderId !== currentUserId && (
-                      <p className="text-xs font-semibold mb-1 opacity-70">{msg.senderName}</p>
+                      <p className="text-xs font-semibold mb-1 opacity-70">{getUserName(msg.senderId)}</p>
                     )}
                     {msg.content}
                   </div>

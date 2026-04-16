@@ -1,0 +1,26 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "map": "Map",
+    "requests": "Requests",
+    "profile": "Profile",
+    "logout": "Logout",
+    "switch_dark": "Switch to Dark Mode",
+    "switch_light": "Switch to Light Mode"
+  },
+  "landing": {
+    "title": "Hyper-Local Emergency Aid.",
+    "subtitle": "When disaster strikes, official systems get overwhelmed. Relief-Map bridges the gap.",
+    "btn_enter": "Enter Platform",
+    "btn_join": "Join Volunteers",
+    "step1_title": "Send SOS",
+    "step2_title": "Match & Alert",
+    "step3_title": "Help Arrives"
+  },
+  "auth": {
+    "welcome": "Welcome back 👋",
+    "create": "Join the network 🌿",
+    "signin_btn": "Sign In to Dashboard",
+    "register_btn": "Create My Account"
+  }
+}

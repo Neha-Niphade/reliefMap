@@ -1,64 +1,120 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, Mic, X, Shield, Heart, Flame, Users, HelpCircle, Check } from 'lucide-react';
+import { AlertTriangle, Mic, X, Shield, Heart, Flame, Users, HelpCircle, Check, MessageCircle, Signal } from 'lucide-react';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { offlineQueue } from '@/services/offlineQueue';
+
+const EMERGENCY_NUMBER = "+919999999999"; // Default Admin/Rescue line
 
 const quickOptions = [
-  { icon: AlertTriangle, label: 'I am in danger', category: 'danger' },
-  { icon: Heart, label: 'Medical emergency', category: 'medical' },
-  { icon: Shield, label: 'Unsafe situation', category: 'women_safety' },
-  { icon: Flame, label: 'Fire emergency', category: 'fire' },
-  { icon: Users, label: 'Need immediate rescue', category: 'rescue' },
-  { icon: HelpCircle, label: 'Other emergency', category: 'other' },
+  { icon: AlertTriangle, label: 'Danger', category: 'danger', priority: 'critical' },
+  { icon: Heart, label: 'Medical', category: 'medical', priority: 'high' },
+  { icon: Shield, label: 'Safety', category: 'women_safety', priority: 'high' },
+  { icon: Flame, label: 'Fire', category: 'fire', priority: 'high' },
+  { icon: Users, label: 'Rescue', category: 'rescue', priority: 'medium' },
+  { icon: HelpCircle, label: 'Other', category: 'other', priority: 'low' },
 ];
 
 export function SOSButton() {
+  const isOnline = useNetworkStatus();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [sent, setSent] = useState(false);
+  const [offlineForm, setOfflineForm] = useState(false);
 
   const handleSOS = () => setIsExpanded(true);
-  const handleClose = () => { setIsExpanded(false); setIsRecording(false); setSent(false); };
+  const handleClose = () => { 
+    setIsExpanded(false); 
+    setIsRecording(false); 
+    setSent(false); 
+    setOfflineForm(false);
+  };
 
-  const sendRequest = async (messageText: string) => {
-    const userId = localStorage.getItem('user_id') || 'anonymous_user';
-    
-    // Default fallback
-    let userLoc = { lat: 28.6139, lng: 77.2090 };
-    
+  const getPos = async () => {
+    let loc = { lat: 28.6139, lng: 77.2090 };
     if (navigator.geolocation) {
       try {
-        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject);
+        const pos = await new Promise<GeolocationPosition>((res, rej) => {
+          navigator.geolocation.getCurrentPosition(res, rej, { timeout: 10000 });
         });
-        userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      } catch (err) {
-        console.error("SOS Loc Error:", err);
-      }
+        loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      } catch (err) { console.error("Loc Error:", err); }
+    }
+    return loc;
+  };
+
+  const handleOfflineSOS = async (option: typeof quickOptions[0]) => {
+     const loc = await getPos();
+     const userName = localStorage.getItem('user_name') || 'User';
+     const userId = localStorage.getItem('user_id') || 'anon';
+     
+     // 1. Prepare SMS Body
+     const msg = `SOS ALERT: ${option.label.toUpperCase()}\nUser: ${userName}\nLoc: ${loc.lat},${loc.lng}\nPriority: ${option.priority.toUpperCase()}\nStatus: EMERGENCY`;
+     
+     // 2. Open SMS Intent
+     const smsIntent = `sms:${EMERGENCY_NUMBER}?body=${encodeURIComponent(msg)}`;
+     
+     // 3. Queue for synchronization
+     await offlineQueue.add({
+       message: `OFFLINE SMS: ${option.label}`,
+       userId,
+       location: loc,
+       category: option.category,
+       priority: option.priority,
+       timestamp: Date.now()
+     });
+     
+     window.location.href = smsIntent;
+     setSent(true);
+     setTimeout(handleClose, 3000);
+  };
+
+  const sendRequest = async (messageText: string, category: string = 'other', priority: string = 'low') => {
+    const userId = localStorage.getItem('user_id') || 'anonymous_user';
+    const loc = await getPos();
+    
+    if (!isOnline) {
+       await offlineQueue.add({
+          message: messageText,
+          userId,
+          location: loc,
+          category,
+          priority,
+          timestamp: Date.now()
+       });
+       return;
     }
     
     try {
       await fetch(`${import.meta.env.VITE_API_URL}/triage/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: messageText, userId, location: userLoc })
+        body: JSON.stringify({ message: messageText, userId, location: loc, category, priority })
       });
     } catch (err) {
       console.error("SOS Error:", err);
     }
   }
 
-  const handleQuickSelect = async (label: string) => {
-    await sendRequest(label);
+  const handleQuickSelect = async (opt: typeof quickOptions[0]) => {
+    if (!isOnline) {
+       await handleOfflineSOS(opt);
+       return;
+    }
+    await sendRequest(opt.label, opt.category, opt.priority);
     setSent(true);
-    setTimeout(() => { setSent(false); setIsExpanded(false); }, 2000);
+    setTimeout(handleClose, 2000);
   };
 
   const handleRecord = async () => {
     setIsRecording(!isRecording);
     if (isRecording) {
+      if (!isOnline) {
+         window.location.href = `sms:${EMERGENCY_NUMBER}?body=${encodeURIComponent("SOS ALERT: Voice message recorded offline.")}`;
+      }
       await sendRequest("Recorded emergency voice note");
       setSent(true);
-      setTimeout(() => { setSent(false); setIsExpanded(false); setIsRecording(false); }, 2000);
+      setTimeout(handleClose, 2000);
     }
   };
 
@@ -90,9 +146,16 @@ export function SOSButton() {
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between">
-                <h2 className="font-display text-xl font-bold text-destructive flex items-center gap-2">
-                  <AlertTriangle className="w-6 h-6" /> Emergency SOS
-                </h2>
+                <div className="flex flex-col">
+                  <h2 className="font-display text-xl font-bold text-destructive flex items-center gap-2">
+                    <AlertTriangle className="w-6 h-6" /> Emergency SOS
+                  </h2>
+                  {!isOnline && (
+                    <div className="flex items-center gap-1.5 text-[10px] text-destructive font-black mt-1 uppercase tracking-widest bg-destructive/10 px-2 py-0.5 rounded-full w-fit">
+                       <Signal className="w-3 h-3 animate-pulse" /> Offline SMS Mode
+                    </div>
+                  )}
+                </div>
                 <button onClick={handleClose} className="p-1 rounded-full hover:bg-secondary">
                   <X className="w-5 h-5 text-muted-foreground" />
                 </button>
@@ -104,29 +167,46 @@ export function SOSButton() {
                   animate={{ scale: 1, opacity: 1 }}
                   className="text-center py-8 space-y-3"
                 >
-                  <div className="w-16 h-16 mx-auto rounded-full gradient-safe flex items-center justify-center text-primary-foreground">
-                    <Check className="w-8 h-8" />
+                  <div className={`w-16 h-16 mx-auto rounded-full ${isOnline ? 'gradient-safe' : 'bg-destructive/15'} flex items-center justify-center text-primary-foreground`}>
+                    {isOnline ? <Check className="w-8 h-8 text-white" /> : <MessageCircle className="w-8 h-8 text-destructive" />}
                   </div>
-                  <p className="font-display font-bold text-lg">SOS Sent!</p>
-                  <p className="text-sm text-muted-foreground">Nearby helpers are being notified</p>
+                  <p className="font-display font-bold text-lg">
+                    {isOnline ? 'SOS Sent!' : 'SMS Generated!'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {isOnline 
+                      ? 'Nearby helpers are being notified' 
+                      : 'Please send the pre-filled SMS to trigger fallback alert.'}
+                  </p>
                 </motion.div>
               ) : (
                 <>
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-3">Quick select your situation:</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {quickOptions.map(opt => (
-                        <motion.button
-                          key={opt.label}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => handleQuickSelect(opt.label)}
-                          className="flex items-center gap-2 p-3 rounded-xl bg-secondary hover:bg-secondary/80 text-sm font-medium text-secondary-foreground transition-colors text-left"
-                        >
-                          <opt.icon className="w-4 h-4 text-primary shrink-0" />
-                          {opt.label}
-                        </motion.button>
-                      ))}
+                  <div className="space-y-4">
+                    {!isOnline && (
+                       <div className="bg-destructive/5 p-3 rounded-xl border border-destructive/20 text-[11px] leading-relaxed text-destructive/80 font-bold">
+                          <Info className="w-4 h-4 inline mr-2 -mt-0.5" />
+                          No internet connection. SOS will generate an SMS intent and auto-sync coordinates when connectivity returns.
+                       </div>
+                    )}
+                    
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-3">Quick select your situation:</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {quickOptions.map(opt => (
+                          <motion.button
+                            key={opt.label}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => handleQuickSelect(opt)}
+                            className="flex items-center gap-2 p-3 rounded-xl bg-secondary hover:bg-secondary/80 text-sm font-bold text-secondary-foreground transition-all border border-transparent shadow-sm hover:border-border"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center shadow-inner">
+                               <opt.icon className="w-4 h-4 text-primary shrink-0" />
+                            </div>
+                            {opt.label}
+                          </motion.button>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
@@ -135,13 +215,13 @@ export function SOSButton() {
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={handleRecord}
-                      className={`w-full py-4 rounded-xl font-display font-bold flex items-center justify-center gap-2 transition-colors ${
+                      className={`w-full py-4 rounded-xl font-display font-bold flex items-center justify-center gap-2 transition-all ${
                         isRecording
-                          ? 'bg-primary animate-pulse'
+                          ? 'bg-primary animate-pulse shadow-lg'
                           : 'bg-secondary hover:bg-secondary/80'
                       } text-foreground`}
                     >
-                      <Mic className={`w-5 h-5 ${isRecording ? 'text-primary-foreground' : 'text-primary'}`} />
+                      <Mic className={`w-5 h-5 ${isRecording ? 'text-primary-foreground text-white' : 'text-primary'}`} />
                       {isRecording ? 'Stop & Send' : 'Hold to Record'}
                     </motion.button>
                   </div>

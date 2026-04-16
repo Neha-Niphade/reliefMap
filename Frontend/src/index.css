@@ -187,17 +187,45 @@
   50% { box-shadow: 0 0 40px hsl(var(--sos) / 0.6), 0 0 80px hsl(var(--sos) / 0.3); transform: scale(1.02); }
 }
 
-/* Leaflet overrides for beautiful Light/Dark support */
-.leaflet-container {
-  background: hsl(var(--background)) !important;
-  transition: filter 0.5s ease;
+/* ── Landing page animation helpers ─────────────────────────────────────────── */
+@keyframes floatY {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-14px); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes gradientPan {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes blobDrift {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  33%       { transform: translate(-48%, -52%) scale(1.08); }
+  66%       { transform: translate(-52%, -48%) scale(0.95); }
 }
 
-.dark .leaflet-tile-pane {
-  filter: invert(100%) hue-rotate(180deg) brightness(85%) contrast(85%);
+.float-hero {
+  animation: floatY 6s ease-in-out infinite;
 }
-.dark .leaflet-control-zoom a {
-  background: hsl(var(--card)) !important;
-  color: hsl(var(--foreground)) !important;
-  border-color: hsl(var(--border)) !important;
+.gradient-text-animated {
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(144 70% 45%), hsl(var(--primary)));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+.blob-drift {
+  animation: blobDrift 12s ease-in-out infinite;
+}
+.glow-btn {
+  box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+  transition: box-shadow 0.35s ease, transform 0.2s ease;
+}
+.glow-btn:hover {
+  box-shadow: 0 0 24px 4px hsl(var(--primary) / 0.35), 0 8px 32px hsl(var(--primary) / 0.2);
+  transform: translateY(-2px) scale(1.04);
 }

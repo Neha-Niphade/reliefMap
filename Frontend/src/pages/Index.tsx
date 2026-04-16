@@ -29,23 +29,35 @@ const Dashboard = () => {
 
   return (
     <AppLayout>
-      <div className="p-4 space-y-4">
-        <StatsBar />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4" style={{ height: 'calc(100vh - 220px)' }}>
-          {/* Map */}
-          <div className="lg:col-span-2 min-h-[300px]">
+      <div className="flex-1 flex flex-col p-4 gap-4 h-full min-h-0">
+        <div className="shrink-0">
+          <StatsBar />
+        </div>
+        
+        <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0">
+          {/* Map Section */}
+          <div className="flex-[2] flex flex-col min-w-0 min-h-[400px] lg:min-h-0 map-container">
             <EmergencyMap />
           </div>
 
-          {/* Sidebar feed */}
-          <div className="flex flex-col gap-3 overflow-hidden">
-            <HelperToggle />
-            <div className="flex items-center justify-between">
-              <h2 className="font-display font-bold text-sm">Nearby Requests</h2>
-              <span className="text-xs text-muted-foreground">{requests.length} active</span>
+          {/* Active Needs Panel */}
+          <div className="flex-1 flex flex-col bg-card rounded-[16px] border border-border shadow-sm min-w-0 min-h-0 overflow-hidden">
+            {/* Header Area */}
+            <div className="shrink-0 flex flex-col gap-3 p-4 border-b border-border/40 bg-background/50 sticky top-0 z-10">
+              <HelperToggle />
+              <div className="flex items-center justify-between">
+                <h2 className="font-display font-bold text-sm">Nearby Requests</h2>
+                <div className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                  {requests.length} active
+                </div>
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-              {sorted.map(r => <RequestCard key={r.id} request={r} />)}
+            
+            {/* Scrollable List Area */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ scrollBehavior: 'smooth' }}>
+              {sorted.map((r) => (
+                <RequestCard key={r.id} request={r} />
+              ))}
             </div>
           </div>
         </div>
