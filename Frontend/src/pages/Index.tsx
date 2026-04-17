@@ -90,8 +90,8 @@ const Dashboard = () => {
         <div className="px-4 pt-4 shrink-0">
           <div className="bg-card border border-border rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDisasterMode ? 'bg-blue-600 text-white' : 'bg-primary text-white'} shadow-lg transition-colors duration-500`}>
-                {isDisasterMode ? <Globe className="w-6 h-6" /> : <Shield className="w-6 h-6" />}
+              <div className={`w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center shadow-lg transition-colors duration-500`}>
+                <img src="/favicon.png" alt="Relief-Map Logo" className="w-full h-full object-cover" />
               </div>
               <div>
                 <h3 className="text-lg font-black tracking-tighter uppercase italic">

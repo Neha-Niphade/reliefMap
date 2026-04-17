@@ -115,7 +115,7 @@ export default function LandingPage() {
             transition={{ type: 'spring', stiffness: 300 }}
             className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shadow-lg"
           >
-            <img src="/logo.png" alt="Relief-Map Logo" className="w-full h-full object-cover" />
+            <img src="/favicon.png" alt="Relief-Map Logo" className="w-full h-full object-cover" />
           </motion.div>
           <span className="font-display font-bold text-xl tracking-tight">Relief-Map</span>
         </Link>

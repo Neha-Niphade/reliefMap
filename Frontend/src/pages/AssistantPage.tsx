@@ -278,15 +278,28 @@ function AssistantPage() {
           {/* INTELLIGENCE SHELF (38.2%) */}
           <div className="w-full lg:w-[38.2%] flex flex-col gap-6 overflow-hidden min-h-0">
              
-             {/* Quick Actions Card */}
-             <div className="flex-1 flex flex-col bg-card border border-border rounded-3xl p-6 shadow-sm overflow-hidden min-h-0">
-                <div className="flex items-center gap-4 mb-4 shrink-0">
-                   <div className="w-8 h-8 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
-                      <BookOpen className="w-4 h-4" />
-                   </div>
-                   <h2 className="text-lg font-black tracking-tight uppercase">Emergency Wiki</h2>
+             {/* ── EMERGENCY WIKI: HIGH VISIBILITY ───────────────── */}
+             <div className="flex-1 flex flex-col bg-card border border-border rounded-3xl p-6 shadow-sm overflow-hidden min-h-0 relative">
+                <div className="absolute top-0 right-0 p-6 opacity-5 rotate-12 pointer-events-none">
+                  <BookOpen className="w-32 h-32" />
                 </div>
-                <div className="flex-1 overflow-y-auto space-y-3 no-scrollbar pr-1">
+
+                <div className="flex items-center justify-between mb-6 shrink-0 relative z-10">
+                   <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-info/10 flex items-center justify-center text-info shadow-sm">
+                         <BookOpen className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-black tracking-tighter uppercase leading-none">Emergency Wiki</h2>
+                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-60 italic">Critical Protocols</p>
+                      </div>
+                   </div>
+                   <div className="px-3 py-1 rounded-full bg-success/10 border border-success/30 text-success text-[10px] font-black uppercase tracking-tighter">
+                     Verified Data
+                   </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto space-y-3 no-scrollbar pr-1 relative z-10">
                    {currentGuides.map(guide => (
                      <div 
                         key={guide.title} 
