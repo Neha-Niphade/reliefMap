@@ -12,7 +12,9 @@ import AuthPage from "./pages/AuthPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ProfilePage from "./pages/ProfilePage.tsx";
 import LandingPage from "./pages/LandingPage.tsx";
+import MyRequestsPage from "./pages/MyRequestsPage.tsx";
 import { DisasterModeProvider } from "@/context/DisasterModeContext";
+import { HelperModeProvider } from "@/context/HelperModeContext";
 import { Navigate } from "react-router-dom";
 
 const queryClient = new QueryClient();
@@ -26,7 +28,8 @@ const AdminProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <DisasterModeProvider>
-      <TooltipProvider>
+      <HelperModeProvider>
+        <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -43,10 +46,12 @@ const App = () => (
             } />
             <Route path="/admin/login" element={<AdminLoginPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/my-requests" element={<MyRequestsPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-      </TooltipProvider>
+        </TooltipProvider>
+      </HelperModeProvider>
     </DisasterModeProvider>
   </QueryClientProvider>
 );
