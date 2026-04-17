@@ -39,8 +39,8 @@ export function AppSidebar() {
       <SidebarContent>
         <div className={`p-4 ${collapsed ? 'px-2' : ''}`}>
           <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <div className={`w-8 h-8 rounded-lg ${isDisasterMode ? 'bg-blue-600' : 'gradient-primary'} flex items-center justify-center shrink-0 shadow-sm transition-colors duration-500`}>
-              {isDisasterMode ? <Globe className="w-4 h-4 text-white" /> : <Shield className="w-4 h-4 text-primary-foreground" />}
+            <div className={`w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0 shadow-sm transition-colors duration-500`}>
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
             </div>
             {!collapsed && (
               <span className="font-display font-bold text-lg tracking-tight">Relief-Map</span>
