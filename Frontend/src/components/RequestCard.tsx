@@ -3,6 +3,7 @@ import { Clock, MapPin, CheckCircle, Activity, AlertTriangle, ShieldAlert, Shiel
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { useUserMap } from '@/hooks/useUserMap';
+import { useNavigate } from 'react-router-dom';
 
 export const CategoryIcons: Record<string, React.FC<any>> = {
   medical: Activity,
@@ -38,19 +39,38 @@ const urgencyBadgeClasses: Record<string, string> = {
   low: 'bg-success/15 text-success',
 };
 
-function timeAgo(dateInput: Date | string) {
+function timeAgo(dateInput: any) {
   if (!dateInput) return 'Unknown';
-  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  
+  let date: Date;
+  
+  // Handle Firestore Timestamp objects
+  if (dateInput && typeof dateInput.toDate === 'function') {
+    date = dateInput.toDate();
+  } else if (typeof dateInput === 'string' || typeof dateInput === 'number') {
+    date = new Date(dateInput);
+  } else {
+    date = dateInput;
+  }
+  
   if (!(date instanceof Date) || isNaN(date.getTime())) return 'Unknown';
   
-  const mins = Math.floor((Date.now() - date.getTime()) / 60000);
+  const diffMs = Date.now() - date.getTime();
+  const mins = Math.floor(diffMs / 60000);
+  
+  if (mins < 0) return 'Just now'; // Handle clock skew
   if (mins < 1) return 'Just now';
   if (mins < 60) return `${mins}m ago`;
-  return `${Math.floor(mins / 60)}h ago`;
+  
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  
+  return `${Math.floor(hours / 24)}d ago`;
 }
 
 export function RequestCard({ request }: { request: any }) {
   const { getUserName } = useUserMap();
+  const navigate = useNavigate();
   
   const handleAccept = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -68,18 +88,34 @@ export function RequestCard({ request }: { request: any }) {
         acceptedAt: new Date().toISOString()
       });
       
-      const threadId = `thread_${request.id}_${currentUserId}`;
+      // Thread ID is now consistent per requester-helper pair
+      const threadId = `t_${request.userId}_${currentUserId.trim()}`;
       const threadRef = doc(db, 'threads', threadId);
       await setDoc(threadRef, {
         id: threadId,
-        requestId: request.id,
-        participantIds: [request.userId, currentUserId],
-        lastSenderId: currentUserId,
-        lastMessage: "Helper has accepted your request. They are on their way.",
+        requestId: request.id, // Keep the thread linked to the LATEST request ID
+        participantIds: [request.userId, currentUserId.trim()],
+        lastSenderId: currentUserId.trim(),
+        lastMessage: "Helper accepted request. Connecting now...",
         updatedAt: new Date().toISOString()
       }, { merge: true });
+
+      // SYNC TO LOCAL DB: Initialize ChatThread record in database
+      try {
+        await fetch(`${import.meta.env.VITE_API_URL}/accept-request/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requestId: request.id,
+            helperId: currentUserId.trim(),
+            requesterId: request.userId
+          })
+        });
+      } catch (syncErr) {
+        console.error("Local DB Sync failed (Non-critical):", syncErr);
+      }
       
-      alert("Request Accepted! You can now communicate in the Chat tab.");
+      navigate('/chat');
     } catch (err) {
       console.error(err);
       alert("Failed to accept request.");
@@ -143,6 +179,11 @@ export function RequestCard({ request }: { request: any }) {
             {request.offlineMode && (
               <span className="flex items-center gap-1 text-[10px] font-black text-destructive uppercase tracking-widest bg-destructive/5 px-2 py-0.5 rounded border border-destructive/10">
                 <Signal className="w-3 h-3 animate-pulse" /> SMS Sync
+              </span>
+            )}
+            {Date.now() - new Date(request.createdAt).getTime() < 5 * 60 * 1000 && (
+              <span className="bg-primary text-primary-foreground text-[10px] font-black px-1.5 py-0.5 rounded animate-pulse">
+                NEW
               </span>
             )}
           </div>

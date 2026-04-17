@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Shield, MapPin, Zap, Users, ArrowRight, HeartPulse,
-  Network, Trophy, UserCheck, Globe, ChevronDown,
+  Network, Trophy, UserCheck, Globe, ChevronDown, ShieldAlert
 } from 'lucide-react';
 import {
   motion, useMotionValue, useTransform, animate,
@@ -16,15 +16,15 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 // ─────────────────────────────────────────────────────────────────────────────
 // Reusable animation variants
 // ─────────────────────────────────────────────────────────────────────────────
-const fadeUp = {
+const fadeUp: any = {
   hidden: { opacity: 0, y: 32 },
   show:   { opacity: 1, y: 0,  transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] } },
 };
-const fadeIn = {
+const fadeIn: any = {
   hidden: { opacity: 0 },
   show:   { opacity: 1, transition: { duration: 0.6 } },
 };
-const slideRight = {
+const slideRight: any = {
   hidden: { opacity: 0, x: 60, scale: 0.95 },
   show:   { opacity: 1, x: 0,  scale: 1, transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] } },
 };
@@ -111,16 +111,23 @@ export default function LandingPage() {
       >
         <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity phi-tracking">
           <motion.div
-            whileHover={{ rotate: 15, scale: 1.1 }}
+            whileHover={{ rotate: 10, scale: 1.1 }}
             transition={{ type: 'spring', stiffness: 300 }}
-            className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg"
+            className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shadow-lg"
           >
-            <Shield className="w-5 h-5 text-primary-foreground" />
+            <img src="/logo.png" alt="Relief-Map Logo" className="w-full h-full object-cover" />
           </motion.div>
           <span className="font-display font-bold text-xl tracking-tight">Relief-Map</span>
         </Link>
 
-        <nav className="flex items-center gap-6">
+        <nav className="flex items-center gap-4 md:gap-8">
+          <div className="hidden md:flex items-center gap-6 mr-4 border-r border-border/50 pr-8">
+            <Link to="/admin/login" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-all flex items-center gap-2 group">
+              <ShieldAlert className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all" />
+              Commander Access
+            </Link>
+          </div>
+          
           <LanguageSwitcher />
           <motion.div whileHover={{ y: -1 }} transition={{ type: 'spring', stiffness: 400 }}>
             <Link to="/auth" className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors hidden sm:block">
@@ -129,7 +136,7 @@ export default function LandingPage() {
           </motion.div>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
             <Link
-              to="/auth"
+              to="/dashboard"
               className="text-sm font-bold bg-primary text-primary-foreground px-6 py-2.5 rounded-full glow-btn shadow-md"
             >
               Get Started
@@ -471,6 +478,14 @@ export default function LandingPage() {
                   accent: 'from-rose-400/15 to-pink-500/15',
                   iconColor: 'text-rose-500',
                   iconBg: 'bg-rose-500/12 group-hover:bg-rose-500/20',
+                },
+                {
+                  icon: Globe,
+                  title: 'Disaster Mode Sync',
+                  desc: 'One-click transition between standard safety and natural disaster protocols (Flood, Earthquake). The entire AI, Map, and SOS logic adapts community-wide.',
+                  accent: 'from-indigo-400/15 to-blue-600/15',
+                  iconColor: 'text-indigo-600',
+                  iconBg: 'bg-indigo-600/12 group-hover:bg-indigo-600/20',
                 },
               ].map((feature, i) => (
                 <motion.div

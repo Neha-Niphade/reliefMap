@@ -1,0 +1,16 @@
+{
+  "admins": [
+    {
+      "email": "admin@reliefmap.com",
+      "password": "EmergencyProtocol2024",
+      "name": "Super Admin",
+      "level": "Global"
+    },
+    {
+      "email": "field.ops@reliefmap.com",
+      "password": "RescueAccess123",
+      "name": "Field Ops Lead",
+      "level": "Regional"
+    }
+  ]
+}

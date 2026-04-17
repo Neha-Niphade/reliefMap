@@ -8,10 +8,13 @@ import { EmergencyAlerts } from '@/components/EmergencyAlerts';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 import { OfflineBanner } from '@/components/OfflineBanner';
+import { useDisasterMode } from '@/context/DisasterModeContext';
+import { Globe, Users as UsersIcon } from 'lucide-react';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { isDisasterMode, toggleDisasterMode } = useDisasterMode();
   // Initialize from local storage, default to light (false)
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -48,6 +51,23 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <span className="ml-3 text-sm text-muted-foreground font-medium hidden sm:inline-block">Hyper-Local Aid Hub</span>
             </div>
             <div className="flex items-center gap-2">
+              <div className="flex bg-secondary rounded-full p-1 mr-2 scale-90 sm:scale-100">
+                <button 
+                  onClick={() => !isDisasterMode && toggleDisasterMode()} 
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isDisasterMode ? 'bg-blue-600 text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
+                  title="Disaster Mode (Flood, Earthquakes, etc)"
+                >
+                  <Globe className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => isDisasterMode && toggleDisasterMode()} 
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${!isDisasterMode ? 'bg-primary text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
+                  title="Standard Emergency Mode"
+                >
+                  <UsersIcon className="w-4 h-4" />
+                </button>
+              </div>
+
               <LanguageSwitcher />
               <button 
                 onClick={() => setIsDark(!isDark)} 

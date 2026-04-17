@@ -2,21 +2,43 @@ import { useEffect, useState, useRef } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, X, MapPin } from 'lucide-react';
+import { AlertTriangle, X, MapPin, Clock } from 'lucide-react';
 
-// Using a reliable short alert sound from Google's sound library (or any equivalent mp3/ogg)
-const ALERT_SOUND_URL = 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg';
+// Generate a synthetic 2-beep alert using Web Audio API.
+// No external URL = no CORS, no autoplay block, always works.
+function playAlertTone() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const playBeep = (startAt: number, freq: number, duration: number) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, startAt);
+      gain.gain.setValueAtTime(0.0, startAt);
+      gain.gain.linearRampToValueAtTime(0.6, startAt + 0.01);
+      gain.gain.linearRampToValueAtTime(0.0, startAt + duration);
+      osc.start(startAt);
+      osc.stop(startAt + duration + 0.05);
+    };
+    // Two-tone SOS beep pattern: 880 Hz → 660 Hz
+    playBeep(ctx.currentTime,        880, 0.18);
+    playBeep(ctx.currentTime + 0.25, 660, 0.18);
+    playBeep(ctx.currentTime + 0.50, 880, 0.18);
+  } catch (e) {
+    console.warn('Audio alert failed:', e);
+  }
+}
 
 export function EmergencyAlerts() {
   const [alertData, setAlertData] = useState<any>(null);
   
-  // Track IDs we've already alerted for, so we don't spam.
-  const seenIds = useRef<Set<string>>(new Set());
-  const soundRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    soundRef.current = new Audio(ALERT_SOUND_URL);
-  }, []);
+  // Track IDs in sessionStorage so they don't re-trigger on refresh
+  const [seenIds, setSeenIds] = useState<Set<string>>(() => {
+    const stored = sessionStorage.getItem('seen_sos_ids');
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  });
 
   useEffect(() => {
     if (!db) return;
@@ -43,17 +65,36 @@ export function EmergencyAlerts() {
           // 4. Not requested by the current user
           // 5. Must be less than 60 seconds old to prevent alerting old data on load
           
-          if (!seenIds.current.has(data.id)) {
-            // Register it as seen immediately
-            seenIds.current.add(data.id);
+          if (!seenIds.has(data.id)) {
+            const createdAtDate = (data.createdAt && typeof data.createdAt.toDate === 'function') 
+              ? data.createdAt.toDate() 
+              : new Date(data.createdAt);
+            
+            const timeDiff = Date.now() - createdAtDate.getTime();
+            const isRecent = timeDiff < 60 * 1000; 
 
             const isUrgent = ['high', 'critical'].includes((data.urgency || '').toLowerCase());
             const isRequested = ['requested', 'active'].includes((data.status || 'requested').toLowerCase());
-            const timeDiff = Date.now() - new Date(data.createdAt).getTime();
-            const isRecent = timeDiff < 60 * 1000; // Only alert if younger than 60s
-            
             if (isUrgent && isRequested && isRecent && data.userId !== currentUserId) {
-              triggerAlert(data);
+              setAlertData(data);
+              playAlertTone();
+              setSeenIds(prev => {
+                const updated = new Set(prev).add(data.id);
+                sessionStorage.setItem('seen_sos_ids', JSON.stringify(Array.from(updated)));
+                return updated;
+              });
+              
+              // Auto-dismiss popup after 6s
+              setTimeout(() => {
+                setAlertData((prev: any) => (prev && prev.id === data.id ? null : prev));
+              }, 6000);
+            } else {
+              // Even if it's not recent or urgent, mark as seen so we don't check again
+              setSeenIds(prev => {
+                const updated = new Set(prev).add(data.id);
+                sessionStorage.setItem('seen_sos_ids', JSON.stringify(Array.from(updated)));
+                return updated;
+              });
             }
           }
         }
@@ -67,13 +108,7 @@ export function EmergencyAlerts() {
 
   const triggerAlert = (data: any) => {
     setAlertData(data);
-    
-    // Play sound but handle browser autoplay policies safely
-    if (soundRef.current) {
-      soundRef.current.play().catch(e => console.log('Audio play blocked by browser policy:', e));
-    }
-    
-    // Auto-dismiss after 6 seconds
+    playAlertTone();
     setTimeout(() => {
       setAlertData((prev: any) => (prev && prev.id === data.id ? null : prev));
     }, 6000);
