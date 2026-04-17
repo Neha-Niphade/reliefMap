@@ -1,53 +1,13 @@
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, ShieldCheck } from 'lucide-react';
-import { db } from '@/lib/firebase';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { useHelperMode } from '@/context/HelperModeContext';
 
 export function HelperToggle() {
-  const [isAvailable, setIsAvailable] = useState(false);
-  const userId = localStorage.getItem('user_id');
-
-  useEffect(() => {
-    if (!userId || !db) return;
-    getDoc(doc(db, 'users', userId)).then(snapshot => {
-      if (snapshot.exists()) {
-        setIsAvailable(snapshot.data().isAvailable === true);
-      }
-    });
-  }, [userId]);
-
-  const toggleStatus = async () => {
-    if (!userId) {
-      alert("Please log in to activate Helper Mode.");
-      return;
-    }
-    const newStatus = !isAvailable;
-    setIsAvailable(newStatus); // Optimistic UI update
-    
-    try {
-      const payload: any = { isAvailable: newStatus };
-      
-      // If toggling ON, try to grab the latest location and update it natively
-      if (newStatus && navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((pos) => {
-          updateDoc(doc(db, 'users', userId), {
-            isAvailable: newStatus,
-            location: { lat: pos.coords.latitude, lng: pos.coords.longitude }
-          });
-        });
-      } else {
-        await updateDoc(doc(db, 'users', userId), payload);
-      }
-    } catch (e) {
-      console.error(e);
-      alert("Failed to sync helper status.");
-    }
-  };
+  const { isAvailable, toggleAvailable } = useHelperMode();
 
   return (
     <motion.button
-      onClick={toggleStatus}
+      onClick={toggleAvailable}
       className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all w-full ${
         isAvailable ? 'bg-accent/15 border border-accent/30' : 'bg-secondary border border-border'
       }`}
@@ -63,7 +23,7 @@ export function HelperToggle() {
           {isAvailable ? 'Available to Help' : 'Helper Mode Off'}
         </p>
         <p className="text-xs text-muted-foreground">
-          {isAvailable ? 'You will receive nearby alerts' : 'Toggle to receive help requests'}
+          {isAvailable ? 'Tap to go offline — showing nearby requests' : 'Toggle to receive help requests'}
         </p>
       </div>
       <div className={`w-11 h-6 rounded-full relative transition-colors ${

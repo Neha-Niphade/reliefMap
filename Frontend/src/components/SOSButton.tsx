@@ -271,6 +271,7 @@ export function SOSButton() {
     <>
       <div className="fixed bottom-6 right-6 z-[9999]">
         <motion.button
+          id="sos-trigger"
           onClick={handleSOS}
           className="flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-[hsl(0,84%,60%)] hover:bg-[hsl(0,84%,55%)] text-white shadow-[0_8px_32px_hsl(0,84%,60%,0.45)] font-display"
           whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}

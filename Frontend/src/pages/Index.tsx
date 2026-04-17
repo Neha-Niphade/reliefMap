@@ -8,6 +8,8 @@ import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { Activity, CheckCircle, Clock, Shield, AlertTriangle, Users, Globe, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDisasterMode } from '@/context/DisasterModeContext';
+import { useHelperMode } from '@/context/HelperModeContext';
+import { Link } from 'react-router-dom';
 
 // Golden Ratio: φ = 1.618  →  map = 61.8%, sidebar = 38.2%
 
@@ -25,8 +27,12 @@ function StatPill({ icon: Icon, label, value, color }: { icon: any; label: strin
   );
 }
 
+const URGENCY_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+
 const Dashboard = () => {
   const { isDisasterMode, toggleDisasterMode } = useDisasterMode();
+  const { isAvailable } = useHelperMode();
+  const currentUserId = localStorage.getItem('user_id');
   const [requests, setRequests] = useState<any[]>([]);
   const [stats, setStats] = useState({
     active: 0, critical: 0, completed: 0, helpers: 0, avgResponse: '—'
@@ -64,11 +70,24 @@ const Dashboard = () => {
     return () => { unsubPosts(); unsubUsers(); };
   }, []);
 
-  // Only show active (non-completed) requests in the sidebar
-  const activeRequests = requests.filter(p => !['completed', 'resolved'].includes((p.status || '').toLowerCase()));
+  // Only active (non-completed) requests
+  const activeRequests = requests.filter(p =>
+    !['completed', 'resolved'].includes((p.status || '').toLowerCase())
+  );
 
-  // Sort: Absolute Latest First (Regardless of urgency)
-  const sorted = [...activeRequests].sort((a, b) => {
+  // ── Helper mode ON: show only 'requested' items from other users ──────
+  // ── Helper mode OFF: display NO requests here (My Requests moved to separate page) ───
+  const visibleRequests = isAvailable
+    ? activeRequests.filter(p =>
+        (p.status || '').toLowerCase() === 'requested' &&
+        p.userId !== currentUserId
+      )
+    : [];
+
+  const sorted = [...visibleRequests].sort((a, b) => {
+    const urgA = URGENCY_RANK[(a.urgency || '').toLowerCase()] ?? 99;
+    const urgB = URGENCY_RANK[(b.urgency || '').toLowerCase()] ?? 99;
+    if (urgA !== urgB) return urgA - urgB;
     const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
     const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
     return dateB.getTime() - dateA.getTime();
@@ -158,21 +177,59 @@ const Dashboard = () => {
             </div>
 
             {/* Section header */}
-            <div className="shrink-0 flex items-center justify-between px-4 pt-4 pb-2">
-              <h2 className="font-display font-bold text-sm tracking-tight">{isDisasterMode ? 'Community Relief Efforts' : 'Nearby Requests'}</h2>
-              <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                {activeRequests.length} active
-              </span>
-            </div>
+            {isAvailable && (
+              <div className="shrink-0 flex items-center justify-between px-4 pt-4 pb-2">
+                <h2 className="font-display font-bold text-sm tracking-tight">
+                  Requests to Accept
+                </h2>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full text-accent bg-accent/10">
+                  {sorted.length} pending
+                </span>
+              </div>
+            )}
 
-            {/* Scrollable list */}
-            <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-2 min-h-0">
-              {sorted.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-sm gap-2">
-                  <Users className="w-8 h-8 opacity-20" />
-                  <p>No active requests nearby</p>
+            {/* Scrollable list / Emphasized SOS */}
+            <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-2 min-h-0 relative">
+              {isAvailable ? (
+                <AnimatePresence mode="popLayout">
+                  {sorted.length === 0 ? (
+                    <motion.div
+                      key="empty"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex flex-col items-center justify-center h-40 text-muted-foreground text-sm gap-2"
+                    >
+                      <Users className="w-8 h-8 opacity-20" />
+                      <p>No pending requests nearby — all clear!</p>
+                    </motion.div>
+                  ) : sorted.map(r => <RequestCard key={r.id} request={r} />)}
+                </AnimatePresence>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center gap-4 py-8 px-4 text-center mt-4 border border-destructive/20 bg-destructive/5 rounded-3xl">
+                   <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center animate-pulse">
+                      <AlertTriangle className="w-10 h-10 text-destructive" />
+                   </div>
+                   <div>
+                     <h3 className="text-xl font-black">Need Help?</h3>
+                     <p className="text-sm text-muted-foreground mt-2 max-w-[200px] mx-auto">
+                       You are currently offline from helper mode. Hit SOS to alert responders.
+                     </p>
+                   </div>
+                   
+                   <button 
+                     onClick={() => document.getElementById('sos-trigger')?.click()}
+                     className="w-full py-4 mt-2 rounded-2xl bg-destructive text-white font-black tracking-widest shadow-xl shadow-destructive/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex justify-center items-center gap-2"
+                   >
+                     <AlertTriangle className="w-5 h-5 fill-white/20" />
+                     EMERGENCY SOS
+                   </button>
+                   
+                   <p className="text-xs text-muted-foreground mt-2 font-medium">
+                     Or view your <Link to="/my-requests" className="underline text-primary">request history</Link>
+                   </p>
                 </div>
-              ) : sorted.map(r => <RequestCard key={r.id} request={r} />)}
+              )}
             </div>
           </div>
         </div>

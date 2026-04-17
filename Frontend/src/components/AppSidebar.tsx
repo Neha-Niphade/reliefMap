@@ -1,4 +1,4 @@
-import { Map, MessageCircle, Bot, BarChart3, Shield, User, Globe } from 'lucide-react';
+import { Map, MessageCircle, Bot, BarChart3, Shield, User, Globe, History } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -25,9 +25,10 @@ export function AppSidebar() {
 
   const navItems = [
     { title: isDisasterMode ? 'Tactical Map' : 'Dashboard', url: '/dashboard', icon: isDisasterMode ? Globe : Map },
-    { title: 'Profile', url: '/profile', icon: User },
+    { title: 'My Requests', url: '/my-requests', icon: History },
     { title: 'Chat', url: '/chat', icon: MessageCircle },
     { title: 'AI Assistant', url: '/assistant', icon: Bot },
+    { title: 'Profile', url: '/profile', icon: User },
   ];
 
   if (isAdmin) {
